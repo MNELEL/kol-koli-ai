@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="קולי AI"/>
+  <meta name="theme-color" content="#050709"/>
+  <title>קולי AI</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;900&display=swap" rel="stylesheet"/>
+
+  <style>
+    :root {
+      --bg: #050709;
+      --surface: #0a0e14;
+      --card: #0f1520;
+      --border: #1a2535;
+      --accent: #3de8b0;
+      --accent2: #5b6fff;
+      --text: #e2eaf5;
+      --muted: #4a6070;
+      --danger: #ff4d6a;
+      --gold: #f5c542;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      direction: rtl;
+      display: flex;
+      flex-direction: column;
+      overscroll-behavior: none;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    /* ── SPLASH ── */
+    #splash {
+      position: fixed; inset: 0; z-index: 999;
+      background: var(--bg);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 24px;
+      transition: opacity .5s ease;
+    }
+    #splash.hide { opacity: 0; pointer-events: none; }
+    .splash-logo {
+      width: 96px; height: 96px; border-radius: 28px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 3rem;
+      box-shadow: 0 0 60px rgba(61,232,176,.3);
+      animation: splash-pulse 1.5s ease-in-out infinite;
+    }
+    @keyframes splash-pulse {
+      0%,100% { box-shadow: 0 0 40px rgba(61,232,176,.3); }
+      50%      { box-shadow: 0 0 80px rgba(61,232,176,.5); }
+    }
+    .splash-name {
+      font-size: 2rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .splash-sub { color: var(--muted); font-size: .9rem; }
+    .splash-bar {
+      width: 160px; height: 3px; background: var(--border); border-radius: 4px; overflow: hidden;
+    }
+    .splash-fill {
+      height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 4px;
+      animation: fill 1.6s ease forwards;
+    }
+    @keyframes fill { from { width: 0; } to { width: 100%; } }
+
+    /* ── STATUS BAR SPACER ── */
+    .status-spacer {
+      height: calc(var(--safe-top) + 12px);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .app-title {
+      font-size: 1.25rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 10px;
+      background: var(--card); border: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; cursor: pointer;
+      transition: background .15s;
+    }
+    .icon-btn:active { background: var(--border); }
+
+    /* ── BOTTOM NAV ── */
+    nav {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding-bottom: var(--safe-bottom);
+      z-index: 100;
+      flex-shrink: 0;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 10px 4px;
+      cursor: pointer; gap: 4px;
+      transition: opacity .15s;
+    }
+    .nav-item:active { opacity: .6; }
+    .nav-icon { font-size: 1.4rem; }
+    .nav-label { font-size: .65rem; color: var(--muted); font-weight: 500; }
+    .nav-item.active .nav-label { color: var(--accent); }
+    .nav-item.active .nav-icon { filter: drop-shadow(0 0 6px var(--accent)); }
+
+    /* ── PAGES ── */
+    .pages {
+      flex: 1; overflow: hidden; position: relative;
+      margin-bottom: calc(60px + var(--safe-bottom));
+    }
+    .page {
+      position: absolute; inset: 0;
+      overflow-y: auto; -webkit-overflow-scrolling: touch;
+      padding: 16px 16px 24px;
+      opacity: 0; pointer-events: none;
+      transform: translateX(30px);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+    .page.active {
+      opacity: 1; pointer-events: auto;
+      transform: translateX(0);
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .card-head {
+      padding: 14px 18px;
+      display: flex; align-items: center; gap: 10px;
+      border-bottom: 1px solid var(--border);
+    }
+    .card-head-icon { font-size: 1.1rem; }
+    .card-head-title { font-size: .95rem; font-weight: 600; }
+    .card-head-sub { font-size: .75rem; color: var(--muted); margin-right: auto; }
+    .card-body { padding: 18px; }
+
+    /* ── INPUTS ── */
+    .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+    .field:last-child { margin-bottom: 0; }
+    .field label { font-size: .78rem; color: var(--muted); font-weight: 500; }
+    .field input, .field textarea {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-family: 'Heebo', sans-serif;
+      font-size: .9rem;
+      padding: 12px 14px;
+      direction: rtl;
+      width: 100%;
+      transition: border-color .2s;
+      -webkit-appearance: none;
+    }
+    .field input:focus, .field textarea:focus {
+      outline: none; border-color: var(--accent);
+    }
+    .field input[type="password"] { letter-spacing: 3px; }
+    .field textarea { resize: none; min-height: 100px; }
+
+    /* ── BUTTONS ── */
+    .btn {
+      width: 100%; padding: 14px;
+      border: none; border-radius: 14px;
+      font-family: 'Heebo', sans-serif; font-weight: 700; font-size: .95rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform .1s, opacity .2s;
+      -webkit-appearance: none;
+    }
+    .btn:active:not(:disabled) { transform: scale(.97); }
+    .btn:disabled { opacity: .4; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #000; margin-bottom: 10px;
+    }
+    .btn-outline {
+      background: transparent; border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-danger {
+      background: rgba(255,77,106,.12); border: 1px solid rgba(255,77,106,.3);
+      color: var(--danger);
+    }
+    .btn-sm {
+      width: auto; padding: 9px 16px; font-size: .82rem; font-weight: 600;
+    }
+
+    /* ── RECORD BUTTON ── */
+    .record-wrap {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 10px 0 20px; gap: 16px;
+    }
+    #waveform {
+      width: 100%; height: 56px; border-radius: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .timer { font-size: 2rem; font-weight: 700; color: var(--danger); min-height: 2.5rem; font-variant-numeric: tabular-nums; }
+    .rec-btn-outer {
+      width: 88px; height: 88px; border-radius: 50%;
+      background: conic-gradient(var(--accent) 0deg, var(--border) 0deg);
+      padding: 4px; cursor: pointer;
+      transition: transform .15s;
+    }
+    .rec-btn-outer:active { transform: scale(.94); }
+    .rec-btn-outer.recording {
+      animation: spin-ring 2s linear infinite;
+      background: conic-gradient(var(--danger) 0deg, rgba(255,77,106,.2) 360deg);
+    }
+    @keyframes spin-ring { to { transform: rotate(360deg); } }
+    .rec-btn-inner {
+      width: 100%; height: 100%; border-radius: 50%;
+      background: var(--card);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+    }
+    .rec-label { font-size: .82rem; color: var(--muted); }
+
+    audio {
+      width: 100%; border-radius: 10px; margin-top: 10px;
+      accent-color: var(--accent);
+    }
+
+    /* ── VOICE ITEMS ── */
+    .voice-item {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 12px 14px; margin-bottom: 10px;
+      cursor: pointer; transition: border-color .2s;
+    }
+    .voice-item:active { background: var(--border); }
+    .voice-item.selected { border-color: var(--accent); background: rgba(61,232,176,.05); }
+    .voice-avatar {
+      width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 700;
+    }
+    .voice-name { font-weight: 600; font-size: .9rem; }
+    .voice-meta { font-size: .72rem; color: var(--muted); }
+    .voice-badge {
+      margin-right: auto; font-size: .65rem; padding: 3px 8px; border-radius: 20px;
+      background: rgba(61,232,176,.12); border: 1px solid rgba(61,232,176,.3);
+      color: var(--accent);
+    }
+
+    /* ── SLIDERS ── */
+    .slider-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 12px;
+    }
+    .slider-row label { font-size: .78rem; color: var(--muted); min-width: 70px; }
+    .slider-row input[type=range] {
+      flex: 1; accent-color: var(--accent); height: 4px;
+      -webkit-appearance: none; border-radius: 4px;
+      background: var(--border);
+    }
+    .slider-row input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 18px;
+      background: var(--accent); border-radius: 50%;
+    }
+    .slider-val { font-size: .78rem; color: var(--accent); min-width: 34px; text-align: center; }
+
+    /* ── STATUS ── */
+    .status {
+      display: none; align-items: center; gap: 8px;
+      border-radius: 12px; padding: 12px 14px;
+      font-size: .82rem; margin-bottom: 12px;
+    }
+    .status.show { display: flex; }
+    .status.info { background: rgba(61,232,176,.06); border: 1px solid rgba(61,232,176,.2); color: var(--accent); }
+    .status.error { background: rgba(255,77,106,.06); border: 1px solid rgba(255,77,106,.2); color: var(--danger); }
+    .status.ok { background: rgba(61,232,176,.08); border: 1px solid rgba(61,232,176,.3); color: var(--accent); }
+    .spin { display: inline-block; animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── HISTORY ── */
+    .hist-item {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 14px; margin-bottom: 10px;
+    }
+    .hist-text { font-size: .8rem; color: var(--muted); margin-bottom: 8px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* ── SETTINGS ── */
+    .setting-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 0; border-bottom: 1px solid var(--border);
+    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-label { font-size: .88rem; }
+    .setting-sub { font-size: .72rem; color: var(--muted); }
+    .pill {
+      font-size: .7rem; padding: 4px 10px; border-radius: 20px;
+      background: rgba(61,232,176,.12); border: 1px solid rgba(61,232,176,.25);
+      color: var(--accent); font-weight: 600;
+    }
+
+    /* ── EMPTY ── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: .88rem; }
+    .empty-icon { font-size: 2.5rem; margin-bottom: 10px; }
+
+    /* ── HINT ── */
+    .hint {
+      font-size: .75rem; color: var(--muted);
+      background: rgba(245,197,66,.05); border: 1px solid rgba(245,197,66,.15);
+      border-radius: 10px; padding: 10px 14px; line-height: 1.6; margin-bottom: 14px;
+    }
+    .hint strong { color: var(--gold); }
+
+    .row { display: flex; gap: 10px; }
+    .row .btn { margin-bottom: 0; }
+
+    /* uploaded audio preview */
+    #upload-preview { display: none; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <div class="splash-logo">🎙️</div>
+  <div class="splash-name">קולי AI</div>
+  <div class="splash-sub">שיבוט קול בעברית</div>
+  <div class="splash-bar"><div class="splash-fill"></div></div>
+</div>
+
+<!-- STATUS BAR SPACER -->
+<div class="status-spacer"></div>
+
+<!-- HEADER -->
+<header>
+  <div class="app-title">🎙️ קולי AI</div>
+  <div class="header-right">
+    <div class="icon-btn" onclick="goPage('settings')" title="הגדרות">⚙️</div>
+  </div>
+</header>
+
+<!-- PAGES -->
+<div class="pages">
+
+  <!-- PAGE: הקלטה -->
+  <div class="page active" id="page-record">
+
+    <!-- Record card -->
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">🎙️</span>
+        <span class="card-head-title">הקלטה לשיבוט</span>
+        <span class="card-head-sub">מינ׳ 1 דקה</span>
+      </div>
+      <div class="card-body">
+        <div class="hint">
+          <strong>💡 טיפ:</strong> דבר בבירור, ללא רעשי רקע. כמה משפטים בקול טבעי מספיקים.
+        </div>
+
+        <!-- Tabs -->
+        <div class="row" style="margin-bottom:14px;">
+          <button class="btn btn-outline btn-sm" id="tab-rec-btn" onclick="switchRecTab('mic')" style="flex:1;">🎙️ הקלט</button>
+          <button class="btn btn-outline btn-sm" id="tab-up-btn" onclick="switchRecTab('upload')" style="flex:1;">📁 העלה</button>
+        </div>
+
+        <!-- Mic tab -->
+        <div id="tab-mic">
+          <!-- WebView warning banner (shown only if mic blocked) -->
+          <div id="webview-warn" style="display:none;" class="hint" style="margin-bottom:12px;">
+            ⚠️ <strong>הקלטה חסומה באפליקציה.</strong><br/>
+            השתמש בלשונית <strong>"העלה קובץ"</strong> — הקלט עם אפליקציית הקלטת הקול של הטלפון ואז העלה כאן.
+          </div>
+          <div class="record-wrap">
+            <canvas id="waveform"></canvas>
+            <div class="timer" id="timer"></div>
+            <div class="rec-btn-outer" id="rec-outer" onclick="toggleRecord()">
+              <div class="rec-btn-inner" id="rec-inner">🎙️</div>
+            </div>
+            <div class="rec-label" id="rec-label">לחץ להקלטה</div>
+          </div>
+          <div id="playback-wrap" style="display:none;">
+            <audio id="playback-audio" controls></audio>
+          </div>
+        </div>
+
+        <!-- Upload tab -->
+        <div id="tab-upload" style="display:none;">
+          <div class="hint">
+            📱 <strong>הקלט עם הטלפון ואז העלה:</strong><br/>
+            פתח את אפליקציית <strong>מקליט הקול</strong> של האנדרואיד, הקלט לפחות דקה, שמור — ואז העלה כאן.
+          </div>
+          <div class="field" style="margin-top:10px;">
+            <label>קובץ שמע (MP3 / WAV / M4A / OGG)</label>
+            <input type="file" id="file-input" accept="audio/*,video/*" style="color:var(--text);padding:10px;"/>
+          </div>
+          <div id="upload-preview">
+            <audio id="upload-audio" controls></audio>
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:16px;">
+          <label>שם הקול</label>
+          <input type="text" id="voice-name" placeholder="לדוגמה: הקול שלי"/>
+        </div>
+
+        <div class="status" id="clone-status"></div>
+
+        <button class="btn btn-primary" id="clone-btn" onclick="cloneVoice()">✨ שכפל קול</button>
+        <button class="btn btn-outline" id="clear-btn" onclick="clearRec()" style="display:none;">🗑️ נקה הקלטה</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PAGE: קולות -->
+  <div class="page" id="page-voices">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">🎭</span>
+        <span class="card-head-title">הקולות שלי</span>
+      </div>
+      <div class="card-body">
+        <div class="status" id="voices-status"></div>
+        <div id="voice-list"><div class="empty"><div class="empty-icon">🎭</div>לחץ "טען קולות" להצגת הרשימה</div></div>
+        <button class="btn btn-outline" onclick="loadVoices()" style="margin-top:4px;">🔄 טען קולות</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: יצירה -->
+  <div class="page" id="page-gen">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">🔊</span>
+        <span class="card-head-title">יצירת דיבור</span>
+        <span class="card-head-sub" id="selected-voice-label">לא נבחר קול</span>
+      </div>
+      <div class="card-body">
+
+        <div class="field">
+          <label>טקסט לדיבור</label>
+          <textarea id="tts-text" placeholder="כתוב כאן מה שתרצה שיאמר הקול שלך..."></textarea>
+        </div>
+
+        <div class="row" style="margin-bottom:14px;">
+          <input type="text" id="ai-prompt" placeholder='✨ בקש מ-AI לכתוב...' style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:Heebo,sans-serif;font-size:.85rem;padding:10px 12px;direction:rtl;"/>
+          <button class="btn btn-outline btn-sm" onclick="genText()">צור</button>
+        </div>
+
+        <div class="slider-row">
+          <label>יציבות</label>
+          <input type="range" id="stability" min="0" max="100" value="50" oninput="document.getElementById('sv').textContent=this.value+'%'"/>
+          <span class="slider-val" id="sv">50%</span>
+        </div>
+        <div class="slider-row">
+          <label>דמיון לקול</label>
+          <input type="range" id="similarity" min="0" max="100" value="75" oninput="document.getElementById('smv').textContent=this.value+'%'"/>
+          <span class="slider-val" id="smv">75%</span>
+        </div>
+
+        <div class="status" id="gen-status"></div>
+        <button class="btn btn-primary" id="gen-btn" onclick="genSpeech()">🔊 צור דיבור</button>
+
+        <div id="output-wrap" style="display:none;">
+          <audio id="output-audio" controls></audio>
+          <button class="btn btn-outline" onclick="dlOutput()" style="margin-top:10px;">⬇️ הורד MP3</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: היסטוריה -->
+  <div class="page" id="page-history">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">📋</span>
+        <span class="card-head-title">היסטוריה</span>
+      </div>
+      <div class="card-body" id="history-body">
+        <div class="empty"><div class="empty-icon">📋</div>אין היסטוריה עדיין</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE: הגדרות -->
+  <div class="page" id="page-settings">
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">🔑</span>
+        <span class="card-head-title">מפתחות API</span>
+      </div>
+      <div class="card-body">
+        <div class="field">
+          <label>ElevenLabs API Key (לשיבוט ודיבור)</label>
+          <input type="password" id="el-key" placeholder="xi_api_..." oninput="saveKeys()"/>
+        </div>
+        <div class="field">
+          <label>Anthropic API Key (לכתיבת טקסט עם AI — אופציונלי)</label>
+          <input type="password" id="ant-key" placeholder="sk-ant-..." oninput="saveKeys()"/>
+        </div>
+        <div class="hint">
+          <strong>📍 איך מקבלים מפתח ElevenLabs:</strong><br/>
+          1. היכנס לאתר elevenlabs.io<br/>
+          2. בתפריט שמאל, לחץ <strong>Developers</strong><br/>
+          3. לחץ <strong>Create API Key</strong> ← הפעל Text to Speech<br/>
+          4. העתק והדבק כאן
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <span class="card-head-icon">ℹ️</span>
+        <span class="card-head-title">אודות</span>
+      </div>
+      <div class="card-body">
+        <div class="setting-row">
+          <div><div class="setting-label">קולי AI</div><div class="setting-sub">שיבוט קול בעברית</div></div>
+          <div class="pill">v1.0</div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">מנוע שיבוט</div><div class="setting-sub">ElevenLabs Instant Voice Cloning</div></div>
+        </div>
+        <div class="setting-row">
+          <div><div class="setting-label">שפת ממשק</div><div class="setting-sub">עברית</div></div>
+          <div class="pill">RTL</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /pages -->
+
+<!-- BOTTOM NAV -->
+<nav>
+  <div class="nav-item active" id="nav-record" onclick="goPage('record')">
+    <div class="nav-icon">🎙️</div>
+    <div class="nav-label">הקלטה</div>
+  </div>
+  <div class="nav-item" id="nav-voices" onclick="goPage('voices')">
+    <div class="nav-icon">🎭</div>
+    <div class="nav-label">קולות</div>
+  </div>
+  <div class="nav-item" id="nav-gen" onclick="goPage('gen')">
+    <div class="nav-icon">🔊</div>
+    <div class="nav-label">יצירה</div>
+  </div>
+  <div class="nav-item" id="nav-history" onclick="goPage('history')">
+    <div class="nav-icon">📋</div>
+    <div class="nav-label">היסטוריה</div>
+  </div>
+  <div class="nav-item" id="nav-settings" onclick="goPage('settings')">
+    <div class="nav-icon">⚙️</div>
+    <div class="nav-label">הגדרות</div>
+  </div>
+</nav>
+
+<script>
+// ── STATE ──
+let mediaRecorder=null, audioChunks=[], isRec=false;
+let recBlob=null, uploadBlob=null, outputBlob=null;
+let timerInt=null, startTime=null;
+let analyser=null, animFrame=null, audioCtx=null;
+let selectedVoiceId=null, voices=[];
+let history=JSON.parse(localStorage.getItem('koli_hist')||'[]');
+let currentPage='record';
+
+// ── SPLASH ──
+setTimeout(()=>{ document.getElementById('splash').classList.add('hide'); },1800);
+
+// ── KEYS (auto-save) ──
+function saveKeys(){
+  localStorage.setItem('el_key', document.getElementById('el-key').value);
+  localStorage.setItem('ant_key', document.getElementById('ant-key').value);
+}
+function loadKeys(){
+  const el=localStorage.getItem('el_key')||'';
+  const ant=localStorage.getItem('ant_key')||'';
+  document.getElementById('el-key').value=el;
+  document.getElementById('ant-key').value=ant;
+}
+loadKeys();
+
+// ── NAV ──
+function goPage(p){
+  currentPage=p;
+  document.querySelectorAll('.page').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  const nav=document.getElementById('nav-'+p);
+  if(nav) nav.classList.add('active');
+  if(p==='history') renderHistory();
+}
+
+// ── REC TABS ──
+function switchRecTab(t){
+  const isMic=t==='mic';
+  document.getElementById('tab-mic').style.display=isMic?'block':'none';
+  document.getElementById('tab-upload').style.display=isMic?'none':'block';
+  document.getElementById('tab-rec-btn').style.borderColor=isMic?'var(--accent)':'var(--border)';
+  document.getElementById('tab-rec-btn').style.color=isMic?'var(--accent)':'var(--text)';
+  document.getElementById('tab-up-btn').style.borderColor=isMic?'var(--border)':'var(--accent)';
+  document.getElementById('tab-up-btn').style.color=isMic?'var(--text)':'var(--accent)';
+}
+
+// ── RECORDING ──
+async function toggleRecord(){
+  if(!isRec) await startRec(); else stopRec();
+}
+async function startRec(){
+  // Check if getUserMedia is available at all (blocked in some WebViews)
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    micBlocked();
+    return;
+  }
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const src=audioCtx.createMediaStreamSource(stream);
+    analyser=audioCtx.createAnalyser(); analyser.fftSize=256;
+    src.connect(analyser); drawWave();
+    mediaRecorder=new MediaRecorder(stream);
+    audioChunks=[];
+    mediaRecorder.ondataavailable=e=>audioChunks.push(e.data);
+    mediaRecorder.onstop=()=>{
+      recBlob=new Blob(audioChunks,{type:'audio/webm'});
+      document.getElementById('playback-audio').src=URL.createObjectURL(recBlob);
+      document.getElementById('playback-wrap').style.display='block';
+      document.getElementById('clear-btn').style.display='block';
+      stream.getTracks().forEach(t=>t.stop());
+      cancelAnimationFrame(animFrame); clearCanvas();
+    };
+    mediaRecorder.start(); isRec=true;
+    document.getElementById('rec-outer').classList.add('recording');
+    document.getElementById('rec-inner').textContent='⏹️';
+    document.getElementById('rec-label').textContent='מקליט... לחץ להפסקה';
+    startTime=Date.now();
+    timerInt=setInterval(()=>{
+      const s=Math.floor((Date.now()-startTime)/1000);
+      const m=Math.floor(s/60);
+      document.getElementById('timer').textContent=String(m).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+    },500);
+  }catch(e){
+    // If mic permission denied or blocked by WebView → show warning + switch to upload tab
+    if(e.name==='NotAllowedError'||e.name==='PermissionDeniedError'||e.name==='NotFoundError'||e.name==='NotSupportedError'){
+      micBlocked();
+    } else {
+      showSt('clone-status','error','❌ שגיאה: '+e.message);
+    }
+  }
+}
+function micBlocked(){
+  // Show banner and auto-switch to upload tab
+  document.getElementById('webview-warn').style.display='block';
+  showSt('clone-status','error','❌ מיקרופון חסום — עבור ללשונית "העלה קובץ"');
+  // Auto-switch to upload after 1.5s
+  setTimeout(()=>switchRecTab('upload'), 1500);
+}
+function stopRec(){
+  if(mediaRecorder) mediaRecorder.stop();
+  isRec=false;
+  document.getElementById('rec-outer').classList.remove('recording');
+  document.getElementById('rec-inner').textContent='🎙️';
+  document.getElementById('rec-label').textContent='הקלטה הסתיימה ✓';
+  clearInterval(timerInt);
+}
+function clearRec(){
+  recBlob=null;
+  document.getElementById('playback-audio').src='';
+  document.getElementById('playback-wrap').style.display='none';
+  document.getElementById('clear-btn').style.display='none';
+  document.getElementById('rec-label').textContent='לחץ להקלטה';
+  document.getElementById('timer').textContent='';
+  document.getElementById('rec-inner').textContent='🎙️';
+}
+
+// Waveform
+function drawWave(){
+  const cv=document.getElementById('waveform');
+  const cx=cv.getContext('2d');
+  cv.width=cv.offsetWidth; cv.height=cv.offsetHeight;
+  const buf=new Uint8Array(analyser.frequencyBinCount);
+  function frame(){
+    animFrame=requestAnimationFrame(frame);
+    analyser.getByteTimeDomainData(buf);
+    cx.clearRect(0,0,cv.width,cv.height);
+    cx.strokeStyle='#3de8b0'; cx.lineWidth=2; cx.beginPath();
+    const slice=cv.width/buf.length; let x=0;
+    buf.forEach((v,i)=>{
+      const y=(v/128)*(cv.height/2);
+      i===0?cx.moveTo(x,y):cx.lineTo(x,y); x+=slice;
+    });
+    cx.stroke();
+  }
+  frame();
+}
+function clearCanvas(){
+  const cv=document.getElementById('waveform');
+  cv.getContext('2d').clearRect(0,0,cv.width,cv.height);
+}
+
+// File upload
+document.getElementById('file-input').addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f) return;
+  uploadBlob=f;
+  document.getElementById('upload-audio').src=URL.createObjectURL(f);
+  document.getElementById('upload-preview').style.display='block';
+});
+
+// ── CLONE VOICE ──
+async function cloneVoice(){
+  const key=document.getElementById('el-key').value.trim()||localStorage.getItem('el_key')||'';
+  const name=document.getElementById('voice-name').value.trim()||'הקול שלי';
+  const isMic=document.getElementById('tab-mic').style.display!=='none';
+  const blob=isMic?recBlob:uploadBlob;
+  if(!key) return showSt('clone-status','error','❌ הכנס מפתח ElevenLabs בהגדרות');
+  if(!blob) return showSt('clone-status','error','❌ '+(isMic?'הקלט קודם':'העלה קובץ קודם'));
+  showSt('clone-status','info','<span class="spin">⏳</span> משכפל קול...');
+  document.getElementById('clone-btn').disabled=true;
+  try{
+    const fd=new FormData();
+    fd.append('name',name);
+    fd.append('files',blob,'voice.webm');
+    const r=await fetch('https://api.elevenlabs.io/v1/voices/add',{method:'POST',headers:{'xi-api-key':key},body:fd});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.detail?.message||JSON.stringify(d));
+    showSt('clone-status','ok','✅ הקול שוכפל בהצלחה!');
+    await loadVoices();
+  }catch(e){ showSt('clone-status','error','❌ '+e.message); }
+  finally{ document.getElementById('clone-btn').disabled=false; }
+}
+
+// ── LOAD VOICES ──
+async function loadVoices(){
+  const key=document.getElementById('el-key').value.trim()||localStorage.getItem('el_key')||'';
+  if(!key){ showSt('voices-status','error','❌ הכנס מפתח ElevenLabs בהגדרות'); return; }
+  showSt('voices-status','info','<span class="spin">⏳</span> טוען...');
+  try{
+    const r=await fetch('https://api.elevenlabs.io/v1/voices',{headers:{'xi-api-key':key}});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.detail?.message||'שגיאה');
+    voices=d.voices||[];
+    renderVoices();
+    document.getElementById('voices-status').className='status';
+  }catch(e){ showSt('voices-status','error','❌ '+e.message); }
+}
+function renderVoices(){
+  const el=document.getElementById('voice-list');
+  if(!voices.length){ el.innerHTML='<div class="empty"><div class="empty-icon">🎭</div>לא נמצאו קולות</div>'; return; }
+  el.innerHTML=voices.map(v=>`
+    <div class="voice-item ${v.voice_id===selectedVoiceId?'selected':''}" onclick="selVoice('${v.voice_id}','${v.name.replace(/'/g,"\\'")}')">
+      <div class="voice-avatar">${v.name[0]}</div>
+      <div>
+        <div class="voice-name">${v.name}</div>
+        <div class="voice-meta">${v.category==='cloned'?'קול מועתק':'קול מובנה'}</div>
+      </div>
+      ${v.category==='cloned'?'<div class="voice-badge">שלי ✓</div>':''}
+    </div>`).join('');
+}
+function selVoice(id,name){
+  selectedVoiceId=id;
+  document.getElementById('selected-voice-label').textContent=name;
+  renderVoices();
+  // go to gen
+  setTimeout(()=>goPage('gen'),300);
+}
+
+// ── GEN TEXT (Claude) ──
+async function genText(){
+  const prompt=document.getElementById('ai-prompt').value.trim();
+  const key=document.getElementById('ant-key').value.trim()||localStorage.getItem('ant_key')||'';
+  if(!prompt) return;
+  if(!key){ showSt('gen-status','error','❌ הכנס מפתח Anthropic בהגדרות'); return; }
+  showSt('gen-status','info','<span class="spin">✨</span> יוצר טקסט...');
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:500,
+        messages:[{role:'user',content:`כתוב בעברית בלבד, ללא הסברים: ${prompt}`}]})
+    });
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error?.message||'שגיאה');
+    document.getElementById('tts-text').value=d.content[0].text;
+    document.getElementById('gen-status').className='status';
+  }catch(e){ showSt('gen-status','error','❌ '+e.message); }
+}
+
+// ── GENERATE SPEECH ──
+async function genSpeech(){
+  const key=document.getElementById('el-key').value.trim()||localStorage.getItem('el_key')||'';
+  const text=document.getElementById('tts-text').value.trim();
+  if(!key) return showSt('gen-status','error','❌ הכנס מפתח ElevenLabs בהגדרות');
+  if(!text) return showSt('gen-status','error','❌ כתוב טקסט');
+  if(!selectedVoiceId) return showSt('gen-status','error','❌ בחר קול מדף הקולות');
+  showSt('gen-status','info','<span class="spin">🔊</span> יוצר דיבור...');
+  document.getElementById('gen-btn').disabled=true;
+  document.getElementById('output-wrap').style.display='none';
+  try{
+    const r=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${selectedVoiceId}`,{
+      method:'POST',
+      headers:{'xi-api-key':key,'Content-Type':'application/json','Accept':'audio/mpeg'},
+      body:JSON.stringify({text,model_id:'eleven_multilingual_v2',
+        voice_settings:{stability:document.getElementById('stability').value/100,
+          similarity_boost:document.getElementById('similarity').value/100}})
+    });
+    if(!r.ok){ const e=await r.json(); throw new Error(e.detail?.message||'שגיאה'); }
+    outputBlob=await r.blob();
+    const url=URL.createObjectURL(outputBlob);
+    document.getElementById('output-audio').src=url;
+    document.getElementById('output-wrap').style.display='block';
+    showSt('gen-status','ok','✅ מוכן!');
+    history.unshift({text:text.slice(0,80),url,ts:Date.now()});
+    if(history.length>15) history=history.slice(0,15);
+    localStorage.setItem('koli_hist',JSON.stringify(history.map(h=>({text:h.text,ts:h.ts}))));
+    renderHistory();
+  }catch(e){ showSt('gen-status','error','❌ '+e.message); }
+  finally{ document.getElementById('gen-btn').disabled=false; }
+}
+function dlOutput(){
+  if(!outputBlob) return;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(outputBlob);
+  a.download='koli-ai-'+Date.now()+'.mp3';
+  a.click();
+}
+
+// ── HISTORY ──
+function renderHistory(){
+  const el=document.getElementById('history-body');
+  if(!history.length){ el.innerHTML='<div class="empty"><div class="empty-icon">📋</div>אין היסטוריה</div>'; return; }
+  el.innerHTML=history.map(h=>`
+    <div class="hist-item">
+      <div class="hist-text">${h.text}${h.text.length>=80?'...':''}</div>
+      ${h.url?`<audio src="${h.url}" controls></audio>`:'<div style="font-size:.75rem;color:var(--muted);">האודיו אינו זמין (טעינה מחדש)</div>'}
+    </div>`).join('');
+}
+
+// ── STATUS ──
+function showSt(id,type,html){
+  const el=document.getElementById(id);
+  el.className='status show '+(type||'info');
+  el.innerHTML=html;
+}
+
+// Init tabs
+switchRecTab('mic');
+renderHistory();
+</script>
+</body>
+</html>
